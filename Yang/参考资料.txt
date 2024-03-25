@@ -1,0 +1,8 @@
+已有方案为：输入捕获，测周法
+
+使用外部定时器，仅限于测量方波（高频测量）
+https://blog.csdn.net/qq_45784922/article/details/109106567
+测频法和测周法
+https://www.cnblogs.com/helesheng/p/14107012.html
+
+
