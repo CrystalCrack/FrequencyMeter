@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "fft.h": "c",
+        "stm32h7xx_hal.h": "c",
+        "stm32h7xx_hal_adc.h": "c",
+        "stm32h7xx_ll_adc.h": "c"
+    }
+}

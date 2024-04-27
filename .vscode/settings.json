@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "measure.h": "c",
+        "gpio.h": "c",
+        "tim.h": "c",
+        "main.h": "c"
+    }
+}

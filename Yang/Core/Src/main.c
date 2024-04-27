@@ -1,23 +1,25 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2023 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
+#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -29,24 +31,27 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-uint8_t mode=2;//1为捕获模式�?��?�测周法�?2为测频法�?3为外部时钟法
-uint32_t PAUSE = 1;//调整高电平持续时�?，初始为1000Hz�?0.1占空�?
-uint32_t PERIOD =500;//调整频率
-uint8_t mes_uart[20]={0};//接收串口数据
+uint8_t mode = 2;           // 1为捕获模式�?��?�测周法�?2为测频法�?3为外部时钟法
+uint32_t PAUSE = 1;         // 调整高电平持续时�?，初始为1000Hz�?0.1占空�?
+uint32_t PERIOD = 500;      // 调整频率
+uint8_t mes_uart[20] = {0}; // 接收串口数据
 
-uint32_t capture_state = 0;//设置捕获模式的状�?
-uint32_t capture_buf[4] = {0};//接受捕获到的时间�?
+uint32_t capture_state = 0;    // 设置捕获模式的状�?
+uint32_t capture_buf[4] = {0}; // 接受捕获到的时间�?
 float high_time = 0;
 float low_time = 0;
 float period_time = 0;
 float high_time_old = 0;
 float low_time_old = 0;
-float period_time_old = 0;//都是记录测量时间的变�?
-uint32_t flag_cnt = 0;//测量十次取平均的标志�?
-uint32_t new_flag = 0;//�?测是否有串口更改标志�?
+float period_time_old = 0; // 都是记录测量时间的变�?
+uint32_t flag_cnt = 0;     // 测量十次取平均的标志�?
+uint32_t new_flag = 0;     // �?测是否有串口更改标志�?
+uint16_t adc_value[FFT_LENGTH];
+uint32_t pwm_val = 0;
+uint32_t pwm_flag = 0;
 
-uint32_t pwm_val=0;
-uint32_t pwm_flag=0;
+
+__IO uint8_t AdcConvEnd = 0;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -74,7 +79,6 @@ static void MPU_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 
 /* USER CODE END 0 */
 
@@ -116,35 +120,45 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_TIM7_Init();
-  MX_USART1_UART_Init();
+  MX_DMA_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_TIM7_Init();
+  MX_TIM12_Init();
+  MX_TIM15_Init();
+  MX_ADC2_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	printf("Begin\n");
-	__HAL_TIM_SET_AUTORELOAD(&htim5,PERIOD-1);
-	__HAL_TIM_SET_COMPARE(&htim5,TIM_CHANNEL_1,PAUSE*100-1);
-	HAL_TIM_PWM_Start(&htim5,TIM_CHANNEL_1);
-	uint8_t _cnt_=0;
+  // printf("Begin\n");
+  // __HAL_TIM_SET_AUTORELOAD(&htim5, PERIOD - 1);
+  // __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, PAUSE * 100 - 1);
+  // HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);
+  // uint8_t _cnt_ = 0;
   while (1)
   {
-		if(mode==1)
-			mode_1();
-		else if(mode==2){
-			if(!_cnt_){
-				HAL_UART_Receive_IT(&huart1,mes_uart,20);//共接�?20位数据，10位表示频率，10位表示占空比
-				HAL_TIM_Base_Start(&htim2);
-				HAL_TIM_Base_Start_IT(&htim3);
-			}
-			_cnt_=1;
-		}
+		adc_start();
+		for (uint16_t temp = 0; temp< FFT_LENGTH;temp++)
+		{
+			printf("%d\r\n", adc_value[temp]);
+		} 
+    // if (mode == 1)
+    //   mode_1();
+    // else if (mode == 2)
+    // {
+    //   if (!_cnt_)
+    //   {
+    //     HAL_TIM_Base_Start(&htim2);
+    //     HAL_TIM_Base_Start_IT(&htim3);
+    //   }
+    //   _cnt_ = 1;
+    // }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -216,7 +230,35 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void adc_start()
+{
+	printf("start_adc\n");
+	MX_ADC2_Init();	//初始化调用放这里, 确保在MX_DMA_Init()初始化后�?  	  
+	HAL_Delay(100);	//有地方说这里可以等等电压稳定后再校准
 
+	if (HAL_ADCEx_Calibration_Start(&hadc2, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
+	{
+			printf("hadc1 error with HAL_ADCEx_Calibration_Start\r\n");
+			Error_Handler();
+	}
+
+	if (HAL_ADC_Start_DMA(&hadc2, (uint32_t *)adc_value, FFT_LENGTH) != HAL_OK)
+	{
+			printf("hadc1 error with HAL_ADC_Start_DMA\r\n");
+			Error_Handler();
+	}
+
+	HAL_TIM_Base_Start(&htim15);
+	while (!AdcConvEnd);
+	AdcConvEnd = 0;
+	HAL_ADC_DeInit(&hadc2);
+	HAL_TIM_Base_Stop(&htim15);
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	 AdcConvEnd = 1;
+}
 /* USER CODE END 4 */
 
 /* MPU Configuration */
