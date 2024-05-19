@@ -34,7 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+enum MODE m = GAP;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -87,13 +87,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_TIM4_Init();
   MX_TIM5_Init();
   MX_USART1_UART_Init();
-  MX_TIM3_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   double freq;
-
+  double gap;
+	printf("启动");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -103,31 +103,63 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    switch (method)
-    {
-    case MEASURE_FREQ_METHOD:
-      printf("frequency method\n");
-      break;
-    case MEASURE_PERIOD_HIGH_METHOD:
-      printf("period method(100-10000Hz)\n");
-      break;
-    case MEASURE_PERIOD_LOW_METHOD:
-      printf("period method(1-100Hz)\n");
-      break;
+    switch(m){
+      case FREQUENCY:
+        switch (method)
+        {
+        case MEASURE_FREQ_METHOD:
+          printf("frequency method\n");
+          break;
+        case MEASURE_PERIOD_HIGH_METHOD:
+          printf("period method(100-10000Hz)\n");
+          break;
+        case MEASURE_PERIOD_LOW_METHOD:
+          printf("period method(1-100Hz)\n");
+          break;
+        }
+        freq = MeasureFreq_main();
+        if (freq >= 1e6)
+        {
+          printf("%.6gMHz\n", freq / 1e6);
+        }
+        else if (freq >= 1e3)
+        {
+          printf("%.6gKHz\n", freq / 1e3);
+        }
+        else
+        {
+          printf("%.6gHz\n", freq);
+        }
+        break;
+      case GAP:
+        m = FREQUENCY;
+        freq = MeasureFreq_main();
+        m = GAP;
+        gap = MeasureGap();
+        double period = 1 / freq;
+        if(gap>period){
+          gap -= (int)(gap / period) * period;
+        }
+        gap = (period - gap) > gap ? gap : (period - gap);
+        printf("signal interval:\n");
+        if(gap<=1e-6){
+          printf("%.6gns\n", gap * 1e9);
+        }
+        else if (gap <= 1e-3)
+        {
+          printf("%.6gus\n", gap * 1e6);
+        }
+        else if (gap < 1)
+        {
+          printf("%.6gms\n", gap * 1e3);
+        }
+        else
+        {
+          printf("%.6gs\n", gap);
+        }
+        break;
     }
-    freq = MeasureFreq_main();
-    if (freq >= 1e6)
-    {
-      printf("%.6gMHz\n", freq / 1e6);
-    }
-    else if (freq >= 1e3)
-    {
-      printf("%.6gKHz\n", freq / 1e3);
-    }
-    else
-    {
-      printf("%.6gHz\n", freq);
-    }
+    
   }
   /* USER CODE END 3 */
 }

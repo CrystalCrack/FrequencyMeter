@@ -48,6 +48,11 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+enum MODE
+{
+    FREQUENCY = 0,
+    GAP
+};
 
 /* USER CODE END EM */
 
