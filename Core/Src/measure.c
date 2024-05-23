@@ -4,6 +4,7 @@
 
 int count[2];
 int rising_time_stamp[2];
+int high_time_stamp[2];
 int capture_cnt = 0;
 int old_ccr2, old_ccr3;
 uint8_t measurecplt = 0;
@@ -49,6 +50,20 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
         {
             __NVIC_DisableIRQ(TIM2_IRQn);
 					capture_cnt=2;
+        }
+    }
+    else if (m==DUTY){
+        switch(capture_state){
+            case 0:
+                high_time_stamp[0] = HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_2);
+                __HAL_TIM_SET_CAPTUREPOLARITY(&htim2, TIM_CHANNEL_2, TIM_ICPOLARITY_FALLING);
+                capture_state++;
+                break;
+            case 1:
+                high_time_stamp[1] = HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_2);
+                __NVIC_DisableIRQ(TIM2_IRQn);
+                capture_state++;
+                break;
         }
     }
 }
@@ -184,4 +199,24 @@ double MeasureGap()
     gap = abs(rising_time_stamp[1] - rising_time_stamp[0]);
     gap *= 1 / 240000000.0;
     return gap;
+}
+
+double MeasureHigh(){
+    double high_lasting;
+    __HAL_TIM_SET_PRESCALER(&htim2, 0); // 240MHz
+    __HAL_TIM_SET_COUNTER(&htim2, 0);
+    HAL_TIM_GenerateEvent(&htim2, TIM_EventSource_Update);
+    __HAL_TIM_SET_CAPTUREPOLARITY(&htim2, TIM_CHANNEL_2, TIM_INPUTCHANNELPOLARITY_RISING);
+
+    capture_state = 0;
+    __NVIC_EnableIRQ(TIM2_IRQn);
+    HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_2);
+
+    while (capture_state<2)
+        ;
+
+    HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_2);
+
+    high_lasting = (high_time_stamp[1] - high_time_stamp[0]) / 240000000.0;
+    return high_lasting;
 }

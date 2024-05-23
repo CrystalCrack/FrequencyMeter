@@ -34,9 +34,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-enum MODE m = BLANK;//模式选择
-uint8_t rx_get=3;//串口接收数据存储
-uint8_t flag_wait=0;
+mode m = BLANK;     // 模式选择
+uint8_t rx_get = 3; // 串口接收数据存储
+uint8_t flag_wait = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -62,9 +62,9 @@ void SystemClock_Config(void);
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -95,122 +95,141 @@ int main(void)
   /* USER CODE BEGIN 2 */
   double freq;
   double gap;
+  double high_lasting;
+  double duty;
+  double period;
 
-	
-	//printf("启动");
+  // printf("启动");
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	HAL_UART_Receive_IT(&huart1,&rx_get,sizeof(rx_get));
+  HAL_UART_Receive_IT(&huart1, &rx_get, sizeof(rx_get));
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    switch(m){
-      case FREQUENCY:
-				
-				//printf("FRE\n");
-        switch (method)
-        {
-        case MEASURE_FREQ_METHOD:
-          printf("meth.txt=\"frequency method\"\xff\xff\xff");
-          break;
-        case MEASURE_PERIOD_HIGH_METHOD:
-          printf("meth.txt=\"period method(100-10000Hz)\"\xff\xff\xff");
-          break;
-        case MEASURE_PERIOD_LOW_METHOD:
-          printf("meth.txt=\"period method(1-100Hz)\"\xff\xff\xff");
-          break;
-        }
-        freq = MeasureFreq_main();
-        if (freq >= 1e6)
-        {
-					printf("fre.txt=\"%.6gMHz\"\xff\xff\xff", freq / 1e6);
-          //printf("%.6gMHz\n", freq / 1e6);
-        }
-        else if (freq >= 1e3)
-        {
-					printf("fre.txt=\"%.6gKHz\"\xff\xff\xff", freq / 1e3);
-          //printf("%.6gKHz\n", freq / 1e3);
-        }
-        else
-        {
-					printf("fre.txt=\"%.6gHz\"\xff\xff\xff", freq);
-          //printf("%.6gHz\n", freq);
-        }
-				
+    switch (m)
+    {
+    case FREQUENCY:
+
+      // printf("FRE\n");
+      switch (method)
+      {
+      case MEASURE_FREQ_METHOD:
+        printf("meth.txt=\"frequency method\"\xff\xff\xff");
         break;
-      case GAP:
-				if(flag_wait==0){
-					flag_wait=1;
-					printf("itv.txt=\"waiting\"\xff\xff\xff");
-				}
-        m = FREQUENCY;
-        freq = MeasureFreq_main();
-        m = GAP;
-        gap = MeasureGap();
-        double period = 1 / freq;
-        if(gap>period){
-          gap -= (int)(gap / period) * period;
-        }
-        gap = (period - gap) > gap ? gap : (period - gap);
-        //printf("signal interval:\n");
-        if(gap<=1e-6){
-          printf("itv.txt=\"%.6gns\"\xff\xff\xff", gap * 1e9);
-        }
-        else if (gap <= 1e-3)
-        {
-          printf("itv.txt=\"%.6gus\"\xff\xff\xff", gap * 1e6);
-        }
-        else if (gap < 1)
-        {
-          printf("itv.txt=\"%.6gms\"\xff\xff\xff", gap * 1e3);
-        }
-        else
-        {
-          printf("itv.txt=\"%.6gs\"\xff\xff\xff", gap);
-        }
-				HAL_Delay(200);
+      case MEASURE_PERIOD_HIGH_METHOD:
+        printf("meth.txt=\"period method(100-10000Hz)\"\xff\xff\xff");
         break;
-			case BLANK:
-				//printf("NOT\n");
-				break;
+      case MEASURE_PERIOD_LOW_METHOD:
+        printf("meth.txt=\"period method(1-100Hz)\"\xff\xff\xff");
+        break;
+      }
+      freq = MeasureFreq_main();
+      if (freq >= 1e6)
+      {
+        printf("fre.txt=\"%.6gMHz\"\xff\xff\xff", freq / 1e6);
+        // printf("%.6gMHz\n", freq / 1e6);
+      }
+      else if (freq >= 1e3)
+      {
+        printf("fre.txt=\"%.6gKHz\"\xff\xff\xff", freq / 1e3);
+        // printf("%.6gKHz\n", freq / 1e3);
+      }
+      else
+      {
+        printf("fre.txt=\"%.6gHz\"\xff\xff\xff", freq);
+        // printf("%.6gHz\n", freq);
+      }
+
+      break;
+    case GAP:
+      if (flag_wait == 0)
+      {
+        flag_wait = 1;
+        printf("itv.txt=\"waiting\"\xff\xff\xff");
+      }
+      m = FREQUENCY;
+      freq = MeasureFreq_main();
+      m = GAP;
+      gap = MeasureGap();
+      period = 1 / freq;
+      if (gap > period)
+      {
+        gap -= (int)(gap / period) * period;
+      }
+      gap = (period - gap) > gap ? gap : (period - gap);
+      // printf("signal interval:\n");
+      if (gap <= 1e-6)
+      {
+        printf("itv.txt=\"%.6gns\"\xff\xff\xff", gap * 1e9);
+      }
+      else if (gap <= 1e-3)
+      {
+        printf("itv.txt=\"%.6gus\"\xff\xff\xff", gap * 1e6);
+      }
+      else if (gap < 1)
+      {
+        printf("itv.txt=\"%.6gms\"\xff\xff\xff", gap * 1e3);
+      }
+      else
+      {
+        printf("itv.txt=\"%.6gs\"\xff\xff\xff", gap);
+      }
+      HAL_Delay(200);
+      break;
+    case DUTY:
+      m = FREQUENCY;
+      freq = MeasureFreq_main();
+      m = DUTY;
+      high_lasting = MeasureHigh();
+      period = 1 / freq;
+      if (high_lasting > period)
+        high_lasting -= (int)(high_lasting / period) * period;
+      duty = (high_lasting / period) * 100;
+      printf("%.4g%%", duty);
+      break;
+    case BLANK:
+      // printf("NOT\n");
+      break;
     }
-		
-    
   }
   /* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Supply configuration update enable
-  */
+   */
   HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
 
   /** Configure the main internal regulator output voltage
-  */
+   */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
+  while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY))
+  {
+  }
 
   __HAL_RCC_SYSCFG_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
 
-  while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
+  while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY))
+  {
+  }
 
   /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+   * in the RCC_OscInitTypeDef structure.
+   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -229,10 +248,8 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
-                              |RCC_CLOCKTYPE_D3PCLK1|RCC_CLOCKTYPE_D1PCLK1;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_D3PCLK1 | RCC_CLOCKTYPE_D1PCLK1;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV2;
@@ -253,20 +270,25 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == USART1)
   {
-		//printf("中断");
-		flag_wait=0;
-    if(rx_get==3)m=BLANK;
-		else if(rx_get==1)m=FREQUENCY;
-		else if(rx_get==2)m=GAP;
-		HAL_UART_Receive_IT(&huart1,&rx_get , sizeof(rx_get));
+    // printf("中断");
+    flag_wait = 0;
+    if (rx_get == 3)
+      m = BLANK;
+    else if (rx_get == 1)
+      m = FREQUENCY;
+    else if (rx_get == 2)
+      m = GAP;
+    else if (rx_get == 4)
+      m = DUTY;
+    HAL_UART_Receive_IT(&huart1, &rx_get, sizeof(rx_get));
   }
 }
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -278,14 +300,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */

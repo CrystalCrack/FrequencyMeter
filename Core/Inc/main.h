@@ -48,12 +48,13 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-enum MODE
+typedef enum __MODE
 {
     FREQUENCY = 0,
     GAP=1,
-		BLANK=2
-};
+		BLANK=2,
+    DUTY
+} mode;
 
 /* USER CODE END EM */
 
