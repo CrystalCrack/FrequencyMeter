@@ -34,7 +34,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-enum MODE m = GAP;
+enum MODE m = BLANK;//模式选择
+uint8_t rx_get=3;//串口接收数据存储
+uint8_t flag_wait=0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -93,11 +95,14 @@ int main(void)
   /* USER CODE BEGIN 2 */
   double freq;
   double gap;
-	printf("启动");
+
+	
+	//printf("启动");
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	HAL_UART_Receive_IT(&huart1,&rx_get,sizeof(rx_get));
   while (1)
   {
     /* USER CODE END WHILE */
@@ -105,33 +110,43 @@ int main(void)
     /* USER CODE BEGIN 3 */
     switch(m){
       case FREQUENCY:
+				
+				//printf("FRE\n");
         switch (method)
         {
         case MEASURE_FREQ_METHOD:
-          printf("frequency method\n");
+          printf("meth.txt=\"frequency method\"\xff\xff\xff");
           break;
         case MEASURE_PERIOD_HIGH_METHOD:
-          printf("period method(100-10000Hz)\n");
+          printf("meth.txt=\"period method(100-10000Hz)\"\xff\xff\xff");
           break;
         case MEASURE_PERIOD_LOW_METHOD:
-          printf("period method(1-100Hz)\n");
+          printf("meth.txt=\"period method(1-100Hz)\"\xff\xff\xff");
           break;
         }
         freq = MeasureFreq_main();
         if (freq >= 1e6)
         {
-          printf("%.6gMHz\n", freq / 1e6);
+					printf("fre.txt=\"%.6gMHz\"\xff\xff\xff", freq / 1e6);
+          //printf("%.6gMHz\n", freq / 1e6);
         }
         else if (freq >= 1e3)
         {
-          printf("%.6gKHz\n", freq / 1e3);
+					printf("fre.txt=\"%.6gKHz\"\xff\xff\xff", freq / 1e3);
+          //printf("%.6gKHz\n", freq / 1e3);
         }
         else
         {
-          printf("%.6gHz\n", freq);
+					printf("fre.txt=\"%.6gHz\"\xff\xff\xff", freq);
+          //printf("%.6gHz\n", freq);
         }
+				
         break;
       case GAP:
+				if(flag_wait==0){
+					flag_wait=1;
+					printf("itv.txt=\"waiting\"\xff\xff\xff");
+				}
         m = FREQUENCY;
         freq = MeasureFreq_main();
         m = GAP;
@@ -141,24 +156,29 @@ int main(void)
           gap -= (int)(gap / period) * period;
         }
         gap = (period - gap) > gap ? gap : (period - gap);
-        printf("signal interval:\n");
+        //printf("signal interval:\n");
         if(gap<=1e-6){
-          printf("%.6gns\n", gap * 1e9);
+          printf("itv.txt=\"%.6gns\"\xff\xff\xff", gap * 1e9);
         }
         else if (gap <= 1e-3)
         {
-          printf("%.6gus\n", gap * 1e6);
+          printf("itv.txt=\"%.6gus\"\xff\xff\xff", gap * 1e6);
         }
         else if (gap < 1)
         {
-          printf("%.6gms\n", gap * 1e3);
+          printf("itv.txt=\"%.6gms\"\xff\xff\xff", gap * 1e3);
         }
         else
         {
-          printf("%.6gs\n", gap);
+          printf("itv.txt=\"%.6gs\"\xff\xff\xff", gap);
         }
+				HAL_Delay(200);
         break;
+			case BLANK:
+				//printf("NOT\n");
+				break;
     }
+		
     
   }
   /* USER CODE END 3 */
@@ -228,7 +248,19 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+/*************串口中断************/
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance == USART1)
+  {
+		//printf("中断");
+		flag_wait=0;
+    if(rx_get==3)m=BLANK;
+		else if(rx_get==1)m=FREQUENCY;
+		else if(rx_get==2)m=GAP;
+		HAL_UART_Receive_IT(&huart1,&rx_get , sizeof(rx_get));
+  }
+}
 /* USER CODE END 4 */
 
 /**

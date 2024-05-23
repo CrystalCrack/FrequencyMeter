@@ -51,7 +51,8 @@ extern "C" {
 enum MODE
 {
     FREQUENCY = 0,
-    GAP
+    GAP=1,
+		BLANK=2
 };
 
 /* USER CODE END EM */
