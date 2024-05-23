@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-extern uint8_t method;
+extern method meth;
 extern mode m;
 
 double MeasureFreq_main();

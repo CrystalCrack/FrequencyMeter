@@ -71,7 +71,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 double MeasureFreq_main()
 {
     double Hertz;
-    switch (method)
+    switch (meth)
     {
     case MEASURE_PERIOD_LOW_METHOD:
         Hertz = MeasureFreq_Period();
@@ -85,18 +85,18 @@ double MeasureFreq_main()
     }
     // SWITCH METHOD
     if (Hertz < 10000 && Hertz > 100)
-        method = MEASURE_PERIOD_HIGH_METHOD;
+        meth = MEASURE_PERIOD_HIGH_METHOD;
     else if (Hertz <= 100)
-        method = MEASURE_PERIOD_LOW_METHOD;
+        meth = MEASURE_PERIOD_LOW_METHOD;
     else
-        method = MEASURE_FREQ_METHOD;
+        meth = MEASURE_FREQ_METHOD;
 
     return Hertz;
 }
 
 double MeasureFreq_Period()
 {
-    if (method == MEASURE_PERIOD_HIGH_METHOD)
+    if (meth == MEASURE_PERIOD_HIGH_METHOD)
     {
         __HAL_TIM_SET_PRESCALER(&htim2, 47); // 5MHz
     }
@@ -107,7 +107,7 @@ double MeasureFreq_Period()
 
     __HAL_TIM_SET_COUNTER(&htim2, 0);
     HAL_TIM_GenerateEvent(&htim2, TIM_EventSource_Update);
-
+		capture_state = 0;
     while (capture_state != 4)
     {
         if (capture_state == 0)
@@ -118,10 +118,9 @@ double MeasureFreq_Period()
         }
     }
 
-    capture_state = 0;
     double Hertz;
     double c = count[1] - count[0];
-    if (method == MEASURE_PERIOD_HIGH_METHOD)
+    if (meth == MEASURE_PERIOD_HIGH_METHOD)
         Hertz = 5000000 / c;
     else
         Hertz = 60000 / c;
@@ -143,10 +142,11 @@ double MeasureFreq_Freq()
     HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_1);
     HAL_TIM_Base_Start(&htim5);
     count[0] = __HAL_TIM_GET_COUNTER(&htim5);
+		measurecplt=0;
     // wait for measurement
     while (!measurecplt)
         ;
-    measurecplt = 0;
+    
     int Hertz = count[1] - count[0];
     HAL_TIM_OC_Stop_IT(&htim2, TIM_CHANNEL_1);
     HAL_TIM_Base_Stop(&htim5);
@@ -209,13 +209,15 @@ double MeasureHigh(){
     __HAL_TIM_SET_CAPTUREPOLARITY(&htim2, TIM_CHANNEL_2, TIM_INPUTCHANNELPOLARITY_RISING);
 
     capture_state = 0;
-    __NVIC_EnableIRQ(TIM2_IRQn);
+    __NVIC_DisableIRQ(TIM2_IRQn);
     HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_2);
+		__NVIC_EnableIRQ(TIM2_IRQn);
 
     while (capture_state<2)
         ;
 
     HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_2);
+		__NVIC_EnableIRQ(TIM2_IRQn);
 
     high_lasting = (high_time_stamp[1] - high_time_stamp[0]) / 240000000.0;
     return high_lasting;

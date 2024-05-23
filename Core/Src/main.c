@@ -47,7 +47,7 @@ uint8_t flag_wait = 0;
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t method = MEASURE_FREQ_METHOD;
+method meth = MEASURE_FREQ_METHOD;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,7 +115,7 @@ int main(void)
     case FREQUENCY:
 
       // printf("FRE\n");
-      switch (method)
+      switch (meth)
       {
       case MEASURE_FREQ_METHOD:
         printf("meth.txt=\"frequency method\"\xff\xff\xff");
@@ -181,6 +181,7 @@ int main(void)
       HAL_Delay(200);
       break;
     case DUTY:
+			//printf("DUTY\n");
       m = FREQUENCY;
       freq = MeasureFreq_main();
       m = DUTY;
@@ -189,7 +190,7 @@ int main(void)
       if (high_lasting > period)
         high_lasting -= (int)(high_lasting / period) * period;
       duty = (high_lasting / period) * 100;
-      printf("%.4g%%", duty);
+      printf("duty.txt=\"%.1lf%%\"\xff\xff\xff", duty);
       break;
     case BLANK:
       // printf("NOT\n");

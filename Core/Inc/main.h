@@ -56,6 +56,12 @@ typedef enum __MODE
     DUTY
 } mode;
 
+typedef enum __METHOD{
+	MEASURE_PERIOD_LOW_METHOD = 0,
+	MEASURE_FREQ_METHOD,
+	MEASURE_PERIOD_HIGH_METHOD
+}method;
+
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -68,9 +74,7 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 
 /* USER CODE BEGIN Private defines */
-#define MEASURE_PERIOD_LOW_METHOD 0
-#define MEASURE_FREQ_METHOD 1
-#define MEASURE_PERIOD_HIGH_METHOD 2
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

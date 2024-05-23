@@ -1262,13 +1262,13 @@ ARM Macro Assembler    Page 20
   608 0000001C                 END
               00000000 
               00000000 
-Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M7.fp.dp --depen
-d=frequencymeter\startup_stm32h743xx.d -ofrequencymeter\startup_stm32h743xx.o -
-I.\RTE\_frequencymeter -I"D:\Program Files\keil\ARM\PACK\ARM\CMSIS\5.4.0\CMSIS\
-Core\Include" -I"D:\Program Files\keil\ARM\PACK\Keil\STM32H7xx_DFP\3.1.1\Driver
-s\CMSIS\Device\ST\STM32H7xx\Include" --predefine="__MICROLIB SETA 1" --predefin
-e="__UVISION_VERSION SETA 527" --predefine="_RTE_ SETA 1" --predefine="STM32H74
-3xx SETA 1" --list=startup_stm32h743xx.lst startup_stm32h743xx.s
+Command Line: --debug --xref --diag_suppress=9931,A1950W --cpu=Cortex-M7.fp.dp 
+--depend=frequencymeter\startup_stm32h743xx.d -ofrequencymeter\startup_stm32h74
+3xx.o -I.\RTE\_frequencymeter -ID:\keil\appdata\ARM\CMSIS\5.9.0\CMSIS\Core\Incl
+ude -ID:\keil\appdata\Keil\STM32H7xx_DFP\3.1.1\Drivers\CMSIS\Device\ST\STM32H7x
+x\Include --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 5
+38" --predefine="_RTE_ SETA 1" --predefine="STM32H743xx SETA 1" --predefine="_R
+TE_ SETA 1" --list=startup_stm32h743xx.lst startup_stm32h743xx.s
 
 
 
